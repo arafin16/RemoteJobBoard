@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ব্যাকএন্ডের বেস ইউআরএল সেট করা
 const API = axios.create({
-  baseURL: 'http://localhost:5265/api',
+  baseURL: 'https://remotejobboard-s6rv.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
