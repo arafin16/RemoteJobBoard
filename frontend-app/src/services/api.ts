@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// ব্যাকএন্ডের বেস ইউআরএল সেট করা
+
 const API = axios.create({
   baseURL: 'https://remotejobboard-s6rv.onrender.com',
   headers: {
@@ -8,7 +8,7 @@ const API = axios.create({
   },
 });
 
-// প্রতিটা রিকোয়েস্ট পাঠানোর আগে অটোমেটিক JWT Token যুক্ত করার মিডলওয়্যার
+
 API.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
