@@ -7,16 +7,16 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ১. PostgreSQL DbContext রেজিস্টার করুন
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
-// ২. CORS পলিসি যুক্ত করুন (Next.js-এর সাথে কানেক্ট করার জন্য)
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // Next.js সাধারণত 3000 পোর্টে চলে
+        policy.WithOrigins("http://localhost:3000","https://remote-job-board-zdtu.vercel.app") 
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
