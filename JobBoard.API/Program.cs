@@ -11,14 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
-// ২. CORS পলিসি কনফিগারেশন (সম্পূর্ণ ওপেন প্রোডাকশন এনভায়রনমেন্ট)
+// ২. CORS পলিসি কনফিগারেশন (যেকোনো ডাইনামিক বা প্রিভিউ ডোমেইনকে অটোমেটিক অ্যালাউ করার জন্য)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.AllowAnyOrigin()   // সব ডোমেইন অ্যালাউড
-              .AllowAnyMethod()   // GET, POST, PUT, DELETE, OPTIONS সব অ্যালাউড
-              .AllowAnyHeader();  // Authorization, Content-Type সহ সব হেডার অ্যালাউড
+        policy.SetIsOriginAllowed(origin => true) // 👈 Vercel এর সব সাবডোমেইন ও প্রিভিউ লিংক হ্যান্ডেল করবে
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // টোকেন ও কুকি সিকিউরিটির জন্য
     });
 });
 
@@ -54,17 +55,19 @@ builder.Services.AddOpenApi(); // .NET 10 এর ডিফল্ট API ডক�
 
 var app = builder.Build();
 
-// 🚨 ক্রিটিক্যাল ফিক্স ১: UseCors-কে একদম পাইপলাইনের শুরুতে রাখা হয়েছে
+// 🚨 ক্রিটিক্যাল ফিক্স ১: UseCors পাইপলাইনের একদম শুরুতে থাকবে
 app.UseCors("AllowNextJS");
 
-// 🚨 ক্রিটিক্যাল ফিক্স ২: প্রি-ফ্লাইট (OPTIONS) রিকোয়েস্ট অটো-পাস করানোর মিডলওয়্যার ট্রিক
+// 🚨 ক্রিটিক্যাল ফিক্স ২: প্রি-ফ্লাইট (OPTIONS) রিকোয়েস্ট ডাইনামিকালি পাস করানোর মিডলওয়্যার
 app.Use(async (context, next) =>
 {
     if (context.Request.Method == "OPTIONS")
     {
-        context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        var origin = context.Request.Headers["Origin"].ToString();
+        context.Response.Headers.Append("Access-Control-Allow-Origin", string.IsNullOrEmpty(origin) ? "*" : origin);
         context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
         context.Response.StatusCode = 200;
         await context.Response.CompleteAsync();
         return;
@@ -77,7 +80,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// ৪. বাকি সিকিউরিটি মিডলওয়্যারগুলোর সিকোয়েন্স
+// ৪. সিকিউরিটি মিডলওয়্যারগুলোর সিকোয়েন্স
 app.UseAuthentication();
 app.UseAuthorization();
 
