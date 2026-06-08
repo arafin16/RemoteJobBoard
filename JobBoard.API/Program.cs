@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
               )
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials(); // কুকি বা অথেনটিকেশন টোকেন আদান-প্রদান করার জন্য বাধ্যতামূলক
+              .AllowAnyOrigin(); // কুকি বা অথেনটিকেশন টোকেন আদান-প্রদান করার জন্য বাধ্যতামূলক
     });
 });
 
