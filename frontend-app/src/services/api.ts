@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 const API = axios.create({
-  baseURL: 'https://remotejobboard-s6rv.onrender.com',
+  baseURL: 'https://remotejobboard-ik8o.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },

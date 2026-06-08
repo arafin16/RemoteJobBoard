@@ -16,9 +16,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.WithOrigins("http://localhost:3000","https://remote-job-board-zdtu.vercel.app") 
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins("http://localhost:3000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins("https://remote-job-board-pi.vercel.app")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
