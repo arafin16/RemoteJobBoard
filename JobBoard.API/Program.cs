@@ -60,4 +60,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+app.MapGet("/", () => "Remote Job Board API is Running Successfully!");
+
 app.Run();
