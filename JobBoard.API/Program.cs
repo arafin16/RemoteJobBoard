@@ -12,22 +12,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
 
+// Taale jekono dynamic vercel domain create holeo block hobe na
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJS", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.WithOrigins("http://localhost:3000")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            policy.WithOrigins("https://remote-job-board-pi.vercel.app")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
+        policy.AllowAnyOrigin() // Shob domain open kore deyar jonno
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
