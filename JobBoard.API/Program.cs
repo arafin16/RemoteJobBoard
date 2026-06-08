@@ -15,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Taale jekono dynamic vercel domain create holeo block hobe na
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowNextJS", policy =>
     {
         policy.AllowAnyOrigin() // Shob domain open kore deyar jonno
               .AllowAnyMethod()
