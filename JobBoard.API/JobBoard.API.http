@@ -1,6 +1,119 @@
-@JobBoard.API_HostAddress = http://localhost:5265
+### Variables
+@localhost = http://localhost:5265
+@production = https://remotejobboard-ik8o.onrender.com
+@base = {{localhost}}
 
-GET {{JobBoard.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Test Register - JobSeeker
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "FullName": "John Doe Seeker",
+  "Email": "seeker@example.com",
+  "Password": "SecurePass123",
+  "Role": "JobSeeker"
+}
+
+###
+### Test Register - Employer
+POST {{base}}/api/auth/register
+Content-Type: application/json
+
+{
+  "FullName": "Jane Smith Employer",
+  "Email": "employer@example.com",
+  "Password": "SecurePass123",
+  "Role": "Employer"
+}
+
+###
+### Test Login
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "Email": "employer@example.com",
+  "Password": "SecurePass123"
+}
+
+###
+### Get All Jobs
+GET {{base}}/api/jobs
+Content-Type: application/json
+
+###
+### Get Jobs with Search
+GET {{base}}/api/jobs?search=React&category=Remote
+Content-Type: application/json
+
+###
+### Get Job By ID
+GET {{base}}/api/jobs/550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+
+###
+### Create Job (Requires Auth - Employer Token)
+POST {{base}}/api/jobs
+Content-Type: application/json
+Authorization: Bearer YOUR_EMPLOYER_TOKEN_HERE
+
+{
+  "title": "Senior React Developer",
+  "description": "We are looking for an experienced React developer with 5+ years of experience",
+  "category": "Remote",
+  "salaryRange": "$80,000 - $120,000",
+  "requirements": "React, Node.js, PostgreSQL, AWS"
+}
+
+###
+### Update Job (Requires Auth - Job Owner Token)
+PUT {{base}}/api/jobs/550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+Authorization: Bearer YOUR_EMPLOYER_TOKEN_HERE
+
+{
+  "title": "Senior React Developer - Updated",
+  "description": "Updated job description",
+  "category": "Remote",
+  "salaryRange": "$90,000 - $130,000",
+  "requirements": "React, Node.js, PostgreSQL, AWS, Docker"
+}
+
+###
+### Delete Job (Requires Auth - Job Owner Token)
+DELETE {{base}}/api/jobs/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer YOUR_EMPLOYER_TOKEN_HERE
+
+###
+### Apply for Job (Requires Auth - JobSeeker Token)
+POST {{base}}/api/applications/apply
+Content-Type: application/json
+Authorization: Bearer YOUR_JOBSEEKER_TOKEN_HERE
+
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "resumeUrl": "https://drive.google.com/file/d/1234567890",
+  "coverLetter": "I am very interested in this position because..."
+}
+
+###
+### Get Job Applications (Employer - see applicants for their job)
+GET {{base}}/api/applications/job/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer YOUR_EMPLOYER_TOKEN_HERE
+
+###
+### Update Application Status (Employer)
+PATCH {{base}}/api/applications/550e8400-e29b-41d4-a716-446655440001/status
+Content-Type: application/json
+Authorization: Bearer YOUR_EMPLOYER_TOKEN_HERE
+
+{
+  "status": "Interviewing"
+}
+
+###
+### Get My Applications (JobSeeker)
+GET {{base}}/api/applications/my-applications
+Authorization: Bearer YOUR_JOBSEEKER_TOKEN_HERE
 
 ###

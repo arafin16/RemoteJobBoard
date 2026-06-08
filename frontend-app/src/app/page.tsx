@@ -41,7 +41,6 @@ function HomeBase() {
     localStorage.clear(); // ব্রাউজারের টোকেন ও ইউজার ডাটা মুছে ফেলা
     setIsLoggedIn(false);
     setUserRole('');
-    window.location.reload(); // স্টেট ও পেজ পুরোপুরি রিফ্রেশ করার জন্য
   };
 
   // ব্যাকএন্ড থেকে চাকরির লিস্ট নিয়ে আসার ফাংশন
@@ -61,7 +60,20 @@ function HomeBase() {
 
   // ক্যাটাগরি ও সার্চ চেঞ্জ হলে অটোমেটিক রিলোড হবে
   useEffect(() => {
-    fetchJobs();
+    const loadJobs = async () => {
+      setLoading(true);
+      try {
+        const response = await API.get('/jobs', {
+          params: { search, category }
+        });
+        setJobs(response.data);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadJobs();
   }, [category, search]);
 
   return (

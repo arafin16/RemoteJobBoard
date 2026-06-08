@@ -59,7 +59,7 @@ function JobSeekerDashboardBase() {
     };
 
     fetchMyApplications();
-  }, [router]);
+  }, []);
 
 
   const handleLogout = () => {

@@ -129,3 +129,4 @@ E:\ENG\RemoteJobBoard\JobBoard.API\bin\Debug\net10.0\Microsoft.IdentityModel.Pro
 E:\ENG\RemoteJobBoard\JobBoard.API\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 E:\ENG\RemoteJobBoard\JobBoard.API\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
 E:\ENG\RemoteJobBoard\JobBoard.API\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+E:\ENG\RemoteJobBoard\JobBoard.API\obj\Debug\net10.0\JobBoard.API.sourcelink.json

@@ -7,19 +7,23 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// ডাটাবেজ কানেকশন কনফিগারেশন
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
-
-// Taale jekono dynamic vercel domain create holeo block hobe na
+// CORS পলিসি কনফিগারেশন (ক্রিডেনশিয়াল এবং নির্দিষ্ট ডোমেইন সাপোর্টসহ)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.AllowAnyOrigin() // Shob domain open kore deyar jonno
+        policy.WithOrigins(
+                "http://localhost:3000",                               // লোকাল ডেভেলপমেন্ট এনভায়রনমেন্ট
+                "https://remote-job-board-zdtu.vercel.app",           // আপনার প্রথম ভার্সেল ডোমেইন
+                "https://remote-job-board-pi.vercel.app"              // কনসোলে পাওয়া বর্তমান একটিভ ভার্সেল ডোমেইন
+              )
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // কুকি বা অথেনটিকেশন টোকেন আদান-প্রদান করার জন্য বাধ্যতামূলক
     });
 });
 
@@ -45,7 +49,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
+
 builder.Services.AddOpenApi(); // .NET 10 এর ডিফল্ট API ডকুমেন্টেশন
 
 var app = builder.Build();
@@ -55,12 +64,15 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// ৩. CORS মিডলওয়্যার অ্যাপ্লাই করুন (Routing এর পরে এবং Authorization এর আগে)
-app.UseCors("AllowNextJS");
-app.UseAuthentication();
+// মিডলওয়্যার অ্যাপ্লাই করার সঠিক ক্রমানুসারে সাজানো
+app.UseCors("AllowNextJS"); // সবার আগে CORS রিকোয়েস্ট হ্যান্ডেল করবে
+
+app.UseAuthentication();    // ওপরে CORS থাকার কারণে অথেনটিকেশন এররও ব্লক হবে না
 app.UseAuthorization();
+
 app.MapControllers();
 
+// রুট ইউআরএল টেস্ট করার জন্য এন্ডপয়েন্ট
 app.MapGet("/", () => "Remote Job Board API is Running Successfully!");
 
 app.Run();
