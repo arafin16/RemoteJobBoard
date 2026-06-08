@@ -11,15 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
-// ২. CORS পলিসি কনফিগারেশন (যেকোনো ডাইনামিক বা প্রিভিউ ডোমেইনকে অটোমেটিক অ্যালাউ করার জন্য)
+// ২. .NET 10 প্রোডাকশন স্ট্যান্ডার্ড CORS কনফিগারেশন
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true) // 👈 Vercel এর সব সাবডোমেইন ও প্রিভিউ লিংক হ্যান্ডেল করবে
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials(); // টোকেন ও কুকি সিকিউরিটির জন্য
+        policy.SetIsOriginAllowed(origin => true) // Vercel-এর সব ডাইনামিক প্রিভিউ ও প্রোডাকশন লিংক এলাউ করবে
+              .AllowAnyMethod()                   // GET, POST, PUT, DELETE, OPTIONS সব এলাউড
+              .AllowAnyHeader()                   // Content-Type, Authorization সহ সব হেডার এলাউড
+              .AllowCredentials();                // ফ্রন্টএন্ড টোকেন/কুকি আদান-প্রদানের জন্য আবশ্যক
     });
 });
 
@@ -51,36 +51,19 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
-builder.Services.AddOpenApi(); // .NET 10 এর ডিফল্ট API ডকুমেন্টেশন
+builder.Services.AddOpenApi(); // .NET 10 API ডক্স
 
 var app = builder.Build();
 
-// 🚨 ক্রিটিক্যাল ফিক্স ১: UseCors পাইপলাইনের একদম শুরুতে থাকবে
+// 🚨 সর্ব প্রথম এবং পাইপলাইনের সবার উপরেই CORS মিডলওয়্যার থাকবে
 app.UseCors("AllowNextJS");
-
-// 🚨 ক্রিটিক্যাল ফিক্স ২: প্রি-ফ্লাইট (OPTIONS) রিকোয়েস্ট ডাইনামিকালি পাস করানোর মিডলওয়্যার
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == "OPTIONS")
-    {
-        var origin = context.Request.Headers["Origin"].ToString();
-        context.Response.Headers.Append("Access-Control-Allow-Origin", string.IsNullOrEmpty(origin) ? "*" : origin);
-        context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-        context.Response.StatusCode = 200;
-        await context.Response.CompleteAsync();
-        return;
-    }
-    await next();
-});
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// ৪. সিকিউরিটি মিডলওয়্যারগুলোর সিকোয়েন্স
+// ৪. বাকি সিকিউরিটি মিডলওয়্যারগুলোর সঠিক সিকোয়েন্স
 app.UseAuthentication();
 app.UseAuthorization();
 
