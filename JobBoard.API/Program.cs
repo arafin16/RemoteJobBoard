@@ -1,31 +1,52 @@
-using JobBoard.API.Data;
-using Microsoft.EntityFrameworkCore;
-
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+// 💡 তোমার প্রজেক্টের ডাটাবেজ ফোল্ডারের সঠিক নেমস্পেসটি এখানে নিশ্চিত করো
+using JobBoard.API.Data; 
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ==========================================
 // ১. ডাটাবেজ কানেকশন কনফিগারেশন
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
+// ==========================================
+var connectionString = builder.Configuration.GetConnectionString("MyConn") 
+                       ?? builder.Configuration["ConnectionStrings:MyConn"]
+                       ?? builder.Configuration["ConnectionStrings__MyConn"];
 
-// ২. .NET 10 প্রোডাকশন স্ট্যান্ডার্ড CORS কনফিগারেশন
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'MyConn' not found.");
+}
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// ==========================================
+// ২. CORS পলিসি কনফিগারেশন
+// ==========================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJS", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true) // Vercel-এর সব ডাইনামিক প্রিভিউ ও প্রোডাকশন লিংক এলাউ করবে
-              .AllowAnyMethod()                   // GET, POST, PUT, DELETE, OPTIONS সব এলাউড
-              .AllowAnyHeader()                   // Content-Type, Authorization সহ সব হেডার এলাউড
-              .AllowCredentials();                // ফ্রন্টএন্ড টোকেন/কুকি আদান-প্রদানের জন্য আবশ্যক
+        policy.WithOrigins(
+                "https://remote-job-board-pi.vercel.app",
+                "https://remote-job-board-zdtu.vercel.app",
+                "http://localhost:5173"
+               )
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
-// ৩. JWT Authentication কনফিগারেশন
+// ==========================================
+// ৩. JWT অথেনটিকেশন কনফিগারেশন
+// ==========================================
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+var secretKey = jwtSettings["Key"] ?? builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt__Key"] ?? "YourSuperSecretBackupKey1234567890!";
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -39,37 +60,31 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
+        ValidIssuer = jwtSettings["Issuer"] ?? "JobBoardAPI",
+        ValidAudience = jwtSettings["Audience"] ?? "JobBoardFrontend",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-    });
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddOpenApi(); // .NET 10 API ডক্স
 
 var app = builder.Build();
 
-// 🚨 সর্ব প্রথম এবং পাইপলাইনের সবার উপরেই CORS মিডলওয়্যার থাকবে
-app.UseCors("AllowNextJS");
+// ==========================================
+// ৪. মিডলওয়্যার পাইপলাইন
+// ==========================================
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
-// ৪. বাকি সিকিউরিটি মিডলওয়্যারগুলোর সঠিক সিকোয়েন্স
+app.UseRouting();
+
+// 🚨 CORS পলিসি অ্যাক্টিভেট করা
+app.UseCors("AllowFrontend");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// রুট ইউআরএল টেস্ট করার জন্য এন্ডপয়েন্ট
-app.MapGet("/", () => "Remote Job Board API is Running Successfully!");
 
 app.Run();
