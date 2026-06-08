@@ -7,27 +7,22 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ডাটাবেজ কানেকশন কনফিগারেশন
+// ১. ডাটাবেজ কানেকশন কনফিগারেশন
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("MyConn")));
 
-// CORS পলিসি কনফিগারেশন (ক্রিডেনশিয়াল এবং নির্দিষ্ট ডোমেইন সাপোর্টসহ)
+// ২. CORS পলিসি কনফিগারেশন (সম্পূর্ণ ওপেন প্রোডাকশন এনভায়রনমেন্ট)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000",                               // লোকাল ডেভেলপমেন্ট এনভায়রনমেন্ট
-                "https://remote-job-board-zdtu.vercel.app",           // আপনার প্রথম ভার্সেল ডোমেইন
-                "https://remote-job-board-pi.vercel.app"              // কনসোলে পাওয়া বর্তমান একটিভ ভার্সেল ডোমেইন
-              )
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowAnyOrigin(); // কুকি বা অথেনটিকেশন টোকেন আদান-প্রদান করার জন্য বাধ্যতামূলক
+        policy.AllowAnyOrigin()   // সব ডোমেইন অ্যালাউড
+              .AllowAnyMethod()   // GET, POST, PUT, DELETE, OPTIONS সব অ্যালাউড
+              .AllowAnyHeader();  // Authorization, Content-Type সহ সব হেডার অ্যালাউড
     });
 });
 
-// JWT Authentication কনফিগারেশন
+// ৩. JWT Authentication কনফিগারেশন
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 builder.Services.AddAuthentication(options =>
@@ -59,15 +54,31 @@ builder.Services.AddOpenApi(); // .NET 10 এর ডিফল্ট API ডক�
 
 var app = builder.Build();
 
+// 🚨 ক্রিটিক্যাল ফিক্স ১: UseCors-কে একদম পাইপলাইনের শুরুতে রাখা হয়েছে
+app.UseCors("AllowNextJS");
+
+// 🚨 ক্রিটিক্যাল ফিক্স ২: প্রি-ফ্লাইট (OPTIONS) রিকোয়েস্ট অটো-পাস করানোর মিডলওয়্যার ট্রিক
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.StatusCode = 200;
+        await context.Response.CompleteAsync();
+        return;
+    }
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// মিডলওয়্যার অ্যাপ্লাই করার সঠিক ক্রমানুসারে সাজানো
-app.UseCors("AllowNextJS"); // সবার আগে CORS রিকোয়েস্ট হ্যান্ডেল করবে
-
-app.UseAuthentication();    // ওপরে CORS থাকার কারণে অথেনটিকেশন এররও ব্লক হবে না
+// ৪. বাকি সিকিউরিটি মিডলওয়্যারগুলোর সিকোয়েন্স
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
