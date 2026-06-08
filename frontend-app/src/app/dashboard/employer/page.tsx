@@ -57,7 +57,7 @@ function EmployerDashboardBase() {
     try {
       const response = await API.get('/jobs');
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const filteredJobs = response.data.filter((j: any) => j.employerId === user.id);
+      const filteredJobs = response.data.filter((j: any) => j.employerId === user.id || j.employer?.id === user.id);
       setMyJobs(filteredJobs);
     } catch (error) {
       console.error(error);
