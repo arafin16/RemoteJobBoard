@@ -5,8 +5,8 @@ RemoteJobBoard is a premium, end-to-end full-stack web application designed to c
 ---
 
 ## 🚀 Live Demo & Links
-- **Frontend Live Website:** [https://your-frontend.vercel.app](https://your-frontend.vercel.app) *(Replace with your Vercel link)*
-- **Backend API Endpoint:** [https://your-backend.onrender.com](https://your-backend.onrender.com) *(Replace with your Render link)*
+- **Frontend Live Website:** [https://remote-job-board-pi.vercel.app/](https://your-frontend.vercel.app) 
+- **Backend API Endpoint:** [https://your-backend.onrender.com](https://your-backend.onrender.com) 
 
 ---
 
